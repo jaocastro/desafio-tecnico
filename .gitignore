@@ -1,0 +1,23 @@
+# ── Docker ────────────────────────────────────────────
+.env
+
+# ── Ruby / Rails ──────────────────────────────────────
+api/.bundle
+api/vendor/bundle
+api/log/*
+api/tmp/*
+api/storage/*
+
+# ── Node / Nuxt ───────────────────────────────────────
+web/node_modules
+web/.nuxt
+web/.output
+web/dist
+
+# ── IDE ───────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
