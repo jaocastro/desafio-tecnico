@@ -5,6 +5,9 @@ export default defineNuxtConfig({
   modules: ['vuetify-nuxt-module'],
 
   vuetify: {
+    moduleOptions: {
+      /* module specific options */
+    },
     vuetifyOptions: {
       theme: {
         defaultTheme: 'light',
@@ -22,6 +25,10 @@ export default defineNuxtConfig({
           },
         },
       },
+      icons: {
+        defaultSet: 'mdi',
+        sets: ['mdi'],
+      },
     },
   },
 
@@ -31,5 +38,13 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['@mdi/font/css/materialdesignicons.css'],
+  // Explicitly include MDI css
+  css: ['@mdi/font/css/materialdesignicons.min.css'],
+
+  // Optimization for clean build
+  vite: {
+    ssr: {
+      noExternal: ['vuetify'],
+    },
+  },
 })
