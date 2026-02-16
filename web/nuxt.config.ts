@@ -40,9 +40,12 @@ export default defineNuxtConfig({
 
   // Explicitly include MDI css
   css: ['@mdi/font/css/materialdesignicons.min.css'],
-
-  // Optimization for clean build
   vite: {
+    server: {
+      watch: {
+        usePolling: true,
+      },
+    },
     ssr: {
       noExternal: ['vuetify'],
     },
