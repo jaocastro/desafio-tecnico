@@ -135,6 +135,16 @@
             class="mt-8 border-dashed"
             rounded="lg"
           />
+          <!-- Pagination -->
+          <div class="d-flex justify-center mt-8" v-if="totalPages > 1">
+            <v-pagination
+              v-model="page"
+              :length="totalPages"
+              rounded="circle"
+              total-visible="5"
+              color="primary"
+            />
+          </div>
         </div>
       </v-container>
     </v-main>
@@ -151,6 +161,8 @@ const jobs = ref<any[]>([])
 const search = ref('')
 const initialLoading = ref(true)
 const loading = ref(false)
+const page = ref(1)
+const totalPages = ref(1)
 let debounceTimer: any = null
 
 // Modal state
@@ -160,11 +172,27 @@ const selectedJob = ref(null)
 const fetchJobs = async () => {
   loading.value = true
   try {
-    const params = search.value ? { q: search.value } : {}
-    const result = await apiFetch<any[]>('/jobs', { params })
-    jobs.value = Array.isArray(result) ? result : []
+    const params: any = {
+      page: page.value,
+      per_page: 9,
+    }
+    
+    if (search.value) {
+      params.q = search.value
+    }
+    
+    const response = await apiFetch<any>('/jobs', { params })
+    
+    if (response && response.data) {
+      jobs.value = Array.isArray(response.data) ? response.data : []
+      totalPages.value = response.meta?.pages || 1
+    } else {
+      jobs.value = Array.isArray(response) ? response : []
+      totalPages.value = 1
+    }
   } catch (e) {
     jobs.value = []
+    totalPages.value = 1
     console.error('Erro ao buscar vagas:', e)
   } finally {
     loading.value = false
@@ -172,13 +200,19 @@ const fetchJobs = async () => {
   }
 }
 
+// Watch com Debounce manual
 watch(search, () => {
   loading.value = true 
   if (debounceTimer) clearTimeout(debounceTimer)
   
   debounceTimer = setTimeout(() => {
+    page.value = 1 // Reset to first page
     fetchJobs()
   }, 500)
+})
+
+watch(page, () => {
+  fetchJobs()
 })
 
 // Initial Load

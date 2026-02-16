@@ -5,10 +5,25 @@ class JobsController < ApplicationController
   def index
     jobs = Job.order(updated_at: :desc)
     jobs = jobs.where(status: "published") unless current_user
-    jobs = jobs.where(status: params[:status]) if params[:status].present? && current_user
-    jobs = jobs.where("title ILIKE ?", "%#{params[:q]}%") if params[:q].present?
+    jobs = jobs.where(status: params[:status]) if params[:status].present?
+    
+    # Manual Pagination
+    page = (params[:page] || 1).to_i
+    per_page = (params[:per_page] || 10).to_i
+    total_count = jobs.count
+    total_pages = (total_count.to_f / per_page).ceil
+    
+    jobs = jobs.limit(per_page).offset((page - 1) * per_page)
 
-    render json: jobs
+    render json: {
+      data: jobs,
+      meta: {
+        count: total_count,
+        page: page,
+        pages: total_pages,
+        items: per_page
+      }
+    }
   end
 
   def show

@@ -24,7 +24,12 @@
         <!-- Tabela de Vagas -->
         <JobsTable
           :items="jobs"
+          :totalItems="totalItems"
+          v-model:page="page"
+          v-model:itemsPerPage="itemsPerPage"
+          v-model:search="search"
           :loading="loading"
+          @update:options="handleTableOptions"
           @create="openCreateDialog"
           @edit="openEditDialog"
           @delete="openDeleteDialog"
@@ -70,6 +75,12 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 
+// Pagination State
+const page = ref(1)
+const itemsPerPage = ref(10)
+const totalItems = ref(0)
+const search = ref('')
+
 // Dialogs State
 const showFormDialog = ref(false)
 const showConfirmDialog = ref(false)
@@ -93,14 +104,54 @@ const showFeedback = (message: string, color = 'success') => {
 const loadJobs = async () => {
   loading.value = true
   try {
-    const data = await apiFetch<any[]>('/jobs')
-    jobs.value = Array.isArray(data) ? data : []
+    const params: any = {
+      page: page.value,
+      per_page: itemsPerPage.value,
+    }
+    
+    if (search.value) {
+      params.q = search.value
+    }
+
+    const response = await apiFetch<any>('/jobs', { params })
+    
+    // Handle paginated response
+    if (response && response.data) {
+      jobs.value = response.data
+      totalItems.value = response.meta?.count || 0
+    } else {
+      // Fallback for non-paginated or empty
+      jobs.value = Array.isArray(response) ? response : []
+      totalItems.value = jobs.value.length
+    }
   } catch (e) {
     console.error('Erro ao carregar vagas:', e)
     showFeedback('Erro ao carregar vagas.', 'error')
+    jobs.value = []
+    totalItems.value = 0
   } finally {
     loading.value = false
   }
+}
+
+// Watchers for server-side search/pagination
+watch([page, itemsPerPage], () => {
+  loadJobs()
+})
+
+// Debounced search watcher
+let debounceTimer: any = null
+watch(search, () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    page.value = 1 // Reset to first page on search
+    loadJobs()
+  }, 500)
+})
+
+const handleTableOptions = ({ page: p, itemsPerPage: ipp }: any) => {
+  page.value = p
+  itemsPerPage.value = ipp
 }
 
 // Actions

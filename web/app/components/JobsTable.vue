@@ -3,7 +3,7 @@
     <!-- Toolbar com Busca e Botão Novo -->
     <div class="d-flex align-center flex-wrap pa-4 gap-4 border-b">
       <v-text-field
-        v-model="search"
+        v-model="internalSearch"
         prepend-inner-icon="mdi-magnify"
         label="Buscar na tabela..."
         variant="outlined"
@@ -11,6 +11,7 @@
         hide-details
         style="max-width: 300px; min-width: 200px;"
         bg-color="surface"
+        @update:model-value="$emit('update:search', $event)"
       />
       <v-spacer />
       <v-btn
@@ -23,14 +24,18 @@
       </v-btn>
     </div>
 
-    <v-data-table
+    <v-data-table-server
+      v-model:items-per-page="internalItemsPerPage"
+      v-model:page="internalPage"
       :headers="headers"
       :items="items"
+      :items-length="totalItems"
       :loading="loading"
-      :search="search"
+      :search="internalSearch"
       hover
       density="comfortable"
       class="rounded-0"
+      @update:options="$emit('update:options', $event)"
     >
       <!-- Slot: Status -->
       <template #item.status="{ item }">
@@ -86,19 +91,39 @@
       <template #loading>
         <v-skeleton-loader type="table-row@6" />
       </template>
-    </v-data-table>
+    </v-data-table-server>
   </v-card>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
   items: any[]
+  totalItems: number
   loading: boolean
+  page: number
+  itemsPerPage: number
+  search: string
 }>()
 
-const emit = defineEmits(['create', 'edit', 'delete'])
+const emit = defineEmits([
+  'create', 'edit', 'delete',
+  'update:page', 'update:itemsPerPage', 'update:search', 'update:options'
+])
 
-const search = ref('')
+const internalPage = computed({
+  get: () => props.page,
+  set: (val) => emit('update:page', val),
+})
+
+const internalItemsPerPage = computed({
+  get: () => props.itemsPerPage,
+  set: (val) => emit('update:itemsPerPage', val),
+})
+
+const internalSearch = computed({
+  get: () => props.search,
+  set: (val) => emit('update:search', val),
+})
 
 const headers = [
   { title: 'ID', key: 'id', width: '80px' },
@@ -106,7 +131,7 @@ const headers = [
   { title: 'Status', key: 'status', width: '120px' },
   { title: 'Tipo', key: 'employment_type' },
   { title: 'Atualizado em', key: 'updated_at', width: '150px' },
-  { title: 'Ações', key: 'actions', sortable: false, align: 'end', width: '120px' },
+  { title: 'Ações', key: 'actions', sortable: false, align: 'end', width: '200px' },
 ]
 
 const getStatusColor = (status: string) => {
